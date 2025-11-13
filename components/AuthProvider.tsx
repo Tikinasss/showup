@@ -1,133 +1,11 @@
-// 'use client';
-
-// import { useEffect, useState } from 'react';
-// import { Appointment, AppointmentStats } from '@/lib/types';
-// import { getAppointments, getStats } from '@/lib/supabase';
-// import StatsCards from '@/components/StatsCards';
-// import Filters, { FilterState } from '@/components/Filters';
-// import AppointmentTable from '@/components/AppointmentTable';
-// import ExportButton from '@/components/ExportButton';
-// import toast from 'react-hot-toast';
-
-// export default function DashboardPage() {
-//   const [appointments, setAppointments] = useState<Appointment[]>([]);
-//   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
-//   const [stats, setStats] = useState<AppointmentStats>({
-//     total: 0,
-//     confirmed: 0,
-//     rescheduled: 0,
-//     noShow: 0,
-//     pending: 0,
-//   });
-//   const [conseillers, setConseillers] = useState<string[]>([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     loadData();
-//   }, []);
-
-//   const loadData = async () => {
-//     try {
-//       const [appointmentsData, statsData] = await Promise.all([
-//         getAppointments(),
-//         getStats(),
-//       ]);
-
-//       setAppointments(appointmentsData);
-//       setFilteredAppointments(appointmentsData);
-//       setStats(statsData);
-
-//       // Extract unique conseillers
-//       const uniqueConseillers = [
-//         ...new Set(appointmentsData.map((a) => a.conseiller).filter(Boolean)),
-//       ];
-//       setConseillers(uniqueConseillers);
-//     } catch (error) {
-//       toast.error('Erreur lors du chargement des données');
-//       console.error(error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleFilterChange = (filters: FilterState) => {
-//     let filtered = [...appointments];
-
-//     if (filters.status) {
-//       filtered = filtered.filter((a) => a.status === filters.status);
-//     }
-
-//     if (filters.date) {
-//       filtered = filtered.filter((a) => a.date === filters.date);
-//     }
-
-//     if (filters.conseiller) {
-//       filtered = filtered.filter((a) => a.conseiller === filters.conseiller);
-//     }
-
-//     if (filters.search) {
-//       const search = filters.search.toLowerCase();
-//       filtered = filtered.filter(
-//         (a) =>
-//           a.prenom.toLowerCase().includes(search) ||
-//           a.objet.toLowerCase().includes(search)
-//       );
-//     }
-
-//     setFilteredAppointments(filtered);
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-//           <p className="text-gray-600">Chargement...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <div className="max-w-7xl mx-auto px-4 py-8">
-//         {/* Header */}
-//         <div className="flex justify-between items-center mb-8">
-//           <div>
-//             <h1 className="text-3xl font-bold text-gray-900">
-//               Dashboard Anti-No-Show
-//             </h1>
-//             <p className="text-gray-600 mt-1">
-//               Gestion et suivi des rendez-vous
-//             </p>
-//           </div>
-//           <ExportButton />
-//         </div>
-
-//         {/* Stats Cards */}
-//         <StatsCards stats={stats} />
-
-//         {/* Filters */}
-//         <Filters
-//           onFilterChange={handleFilterChange}
-//           conseillers={conseillers}
-//         />
-
-//         {/* Appointments Table */}
-//         <AppointmentTable appointments={filteredAppointments} />
-//       </div>
-//     </div>
-//   );
-// }
-
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Lock, Mail, User, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
-import { signUp, signIn } from '@/lib/supabase-auth';
-import toast from 'react-hot-toast';
 
-export default function AuthPage() {
+import { useState } from 'react';
+import { Lock, Mail, User, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+// Simuler l'authentification (remplacez par votre logique Supabase)
+const AuthInterface = () => {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -138,10 +16,10 @@ export default function AuthPage() {
     fullName: '',
     confirmPassword: ''
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState({});
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors = {};
     
     if (!formData.email) {
       newErrors.email = 'Email requis';
@@ -168,7 +46,7 @@ export default function AuthPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -176,23 +54,24 @@ export default function AuthPage() {
     setLoading(true);
     
     try {
+      // Simuler l'appel API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       if (isLogin) {
-        await signIn(formData.email, formData.password);
-        toast.success('Connexion réussie !');
-        router.push('/formulaire');
+        console.log('Connexion avec:', formData.email);
+        router.push('/auth');
       } else {
-        await signUp(formData.email, formData.password, formData.fullName);
-        toast.success('Compte créé ! Vérifiez votre email.');
-        setIsLogin(true);
+        console.log('Inscription avec:', formData.email, formData.fullName);
+        router.push('/auth');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Une erreur est survenue');
+    } catch (error) {
+      alert('Erreur: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -202,7 +81,7 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      {/* Animated background */}
+      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl -top-48 -left-48 animate-pulse"></div>
         <div className="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl -bottom-48 -right-48 animate-pulse" style={{ animationDelay: '1s' }}></div>
@@ -227,8 +106,8 @@ export default function AuthPage() {
           </div>
 
           {/* Form */}
-          <div className="p-8 space-y-6">
-            {/* Full Name */}
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            {/* Full Name (only for signup) */}
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -296,7 +175,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -306,7 +185,7 @@ export default function AuthPage() {
               )}
             </div>
 
-            {/* Confirm Password */}
+            {/* Confirm Password (only for signup) */}
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -331,13 +210,12 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* Forgot Password */}
+            {/* Forgot Password (only for login) */}
             {isLogin && (
               <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => router.push('/reset-password')}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
                 >
                   Mot de passe oublié ?
                 </button>
@@ -346,9 +224,9 @@ export default function AuthPage() {
 
             {/* Submit Button */}
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-indigo-300 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-indigo-300 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -363,7 +241,7 @@ export default function AuthPage() {
               )}
             </button>
 
-            {/* Toggle */}
+            {/* Toggle Login/Signup */}
             <div className="text-center pt-4 border-t border-gray-200">
               <p className="text-gray-600">
                 {isLogin ? "Pas encore de compte ?" : "Déjà un compte ?"}
@@ -372,20 +250,29 @@ export default function AuthPage() {
                   onClick={() => {
                     setIsLogin(!isLogin);
                     setErrors({});
+                    setFormData({
+                      email: '',
+                      password: '',
+                      fullName: '',
+                      confirmPassword: ''
+                    });
                   }}
-                  className="ml-2 text-indigo-600 hover:text-indigo-700 font-semibold"
+                  className="ml-2 text-indigo-600 hover:text-indigo-700 font-semibold transition-colors"
                 >
                   {isLogin ? 'Créer un compte' : 'Se connecter'}
                 </button>
               </p>
             </div>
-          </div>
+          </form>
         </div>
 
+        {/* Footer Note */}
         <p className="text-center mt-6 text-white/90 text-sm">
           🔒 Vos données sont sécurisées et cryptées
         </p>
       </div>
     </div>
   );
-}
+};
+
+export default AuthInterface;

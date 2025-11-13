@@ -1,62 +1,41 @@
-import { NextResponse } from 'next/server';
-import { getAppointments } from '@/lib/supabase';
-import { formatDate, getStatusLabel } from '@/lib/utils';
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+import { Appointment } from '@/lib/types';
 
-export async function GET() {
+const convertToCSV = (appointments: Appointment[]) => {
+  const header = [
+    'Prénom', 'Phone', 'Email', 'Date', 'Heure', 'Lieu',
+    'Conseiller', 'Objet', 'Statut', 'Langue', 'Créé', 'MisAJour'
+  ];
+  const rows = appointments.map(a => [
+    a.prenom, a.phone, a.email, a.date, a.heure,
+    a.lieu, a.conseiller, a.objet, a.statut,
+    a.langue, a.created_at, a.updated_at
+  ]);
+  return [header, ...rows].map(r => r.join(';')).join('\n');
+};
+
+export async function GET(req: NextRequest) {
   try {
-    const appointments = await getAppointments();
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*');
 
-    // Generate CSV
-    const headers = [
-      'ID',
-      'Prénom',
-      'Objet',
-      'Date',
-      'Heure',
-      'Lieu/Lien',
-      'Statut',
-      'Conseiller',
-      'Téléphone',
-      'Créé le',
-      'Dernière MAJ',
-    ];
+    if (error) throw error;
 
-    const rows = appointments.map((apt) => [
-      apt.id,
-      apt.prenom,
-      apt.objet,
-      formatDate(apt.date),
-      apt.heure,
-      apt.lieu_lien || '',
-      getStatusLabel(apt.status),
-      apt.conseiller || '',
-      apt.telephone || '',
-      formatDate(apt.created_at),
-      formatDate(apt.updated_at),
-    ]);
+    const csv = convertToCSV(data as Appointment[]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-      ),
-    ].join('\n');
-
-    // Add BOM for Excel UTF-8 compatibility
-    const bom = '\uFEFF';
-    const csvWithBom = bom + csvContent;
-
-    return new NextResponse(csvWithBom, {
+    return new Response(csv, {
       status: 200,
       headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="appointments_${new Date().toISOString().split('T')[0]}.csv"`,
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="appointments.csv"`,
       },
     });
-  } catch (error) {
-    console.error('Erreur export:', error);
+  } catch (err) {
+    console.error('Erreur API export:', err);
     return NextResponse.json(
-      { error: 'Erreur lors de l\'export' },
+      { error: 'Erreur lors de l’export CSV' },
       { status: 500 }
     );
   }
