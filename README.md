@@ -1,4 +1,34 @@
-# 🚀 Anti-No-Show Dashboard
+# 🚀 Anti-No-Show  : Généralités
+
+Ce projet vise à réduire les **absences aux rendez-vous** grâce à des rappels proactifs, confirmations et reprogrammation autonome via SMS et messages vocaux.
+
+## 📝 Rappel des objectifs
+Pour plus de détails, voir [problematique.md](problematique.md).
+
+L’objectif de ce projet est de proposer une solution **non pénalisante** sous forme de **rappels proactifs et engageants** pour les utilisateurs :  
+- **Rappels personnalisés** avant le rendez-vous (D-3, D-1, H-3, H-1, H0, H+5)  
+- **Confirmation ou reprogrammation en 1 clic**  
+- **Tableau de bord KPI** pour suivre l’efficacité de la solution  
+
+**KPI cibles :**
+- Hausse du taux de présence de **+20 à +35 %**  
+- Nombre de confirmations et reprogrammations  
+- Suivi des no-shows et opt-outs  
+
+## 📦 Stack technique
+
+- **Next.js 14** – Dashboard et pages utilisateurs  
+- **Supabase (PostgreSQL)** – Gestion des rendez-vous et utilisateurs  
+- **n8n** – Orchestration des rappels et envoi SMS/voix  
+- **TopMessages** – Canal SMS et messages vocaux  
+- **TailwindCSS / TypeScript / Day.js / React Hot Toast** – UI et expérience utilisateur  
+
+## 🖥️ Workflow fonctionnel (macro)
+Voici le diagramme fonctionnel du système :
+
+![Alt text](./anti-no-show.png)
+
+# 🚀 Configuration Dashboard 
 
 Dashboard Next.js 14 pour la gestion des rendez-vous et la réduction des no-shows.
 
@@ -17,7 +47,7 @@ cp .env.example .env.local
 # Éditer .env.local avec vos credentials Supabase
 ```
 
-## 🔐 Configuration Supabase
+## 🔐 Configuration Supabase 
 
 1. Créer un projet sur [supabase.com](https://supabase.com)
 2. Créer la table `appointments` avec le schéma SQL fourni
@@ -43,6 +73,10 @@ CREATE TABLE appointments (
 CREATE INDEX idx_appointments_status ON appointments(status);
 CREATE INDEX idx_appointments_date ON appointments(date);
 ```
+
+
+## 🔐 Configuration n8n
+voir le code ici =>  
 
 ## 🏃‍♂️ Lancement
 
