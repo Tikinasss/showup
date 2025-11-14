@@ -79,8 +79,11 @@ CREATE INDEX idx_appointments_date ON appointments(date);
 
 ## 🔐 Configuration n8n
 C'est l'orchestrateur principal du système de rappel Anti-No-Show. 
+
 Pour la touche de boost d'engagement de l'utilisateur, nous avons intégrer des données sur la météo, et des messages personnalisés grâce à un système agent. 
+
 A ne pas oublier qu'on vise une solution impactante, sous forme de **rappels proactifs et engageants** où il est crucial d'attirer efficacement l'attention de l'utilisateur. 
+
 Vous aurez aux fichiers de config json n8n [ici](problematique.md)
 
 ## 🏃‍♂️ Lancement
