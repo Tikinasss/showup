@@ -1,0 +1,52 @@
+<mxfile host="65bd71144e">
+    <diagram name="Anti-No-Show Workflow" id="antiNoShow">
+        <mxGraphModel dx="919" dy="354" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Dashboard Next.js :&#xa;Nouveau rendez-vous &#xa;" style="rounded=1;fillColor=#FFD966;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="50" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Supabase: stocker RDV&#xa;(Backend)" style="rounded=1;fillColor=#6FA8DC;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="150" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="n8n: calcul des reminders&#xa;(Backend - orchestrator)" style="rounded=1;fillColor=#8E7CC3;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="270" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="n8n: Décision rappel: D-3 / D-1 / H-3 / H-1 / H0 / H+5" style="rhombus;fillColor=#8E7CC3;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="390" width="360" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="n8n: SMS → TopMessages" style="rounded=1;fillColor=#8E7CC3;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="370" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="n8n Message vocal → TopMessages" style="rounded=1;fillColor=#8E7CC3;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="470" y="470" width="210" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="Dashboard Next.js / Supabase:&#xa; suivi confirmations / reprogrammations / no-show / opt-out" style="rounded=1;fillColor=#F4B183;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="730" y="390" width="360" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;strokeColor=#33FFFF;fillColor=#33FFFF;" parent="1" source="2" target="3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;strokeColor=#33FFFF;fillColor=#33FFFF;" parent="1" source="3" target="4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;strokeColor=#33FFFF;" parent="1" source="4" target="5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;strokeColor=#33FFFF;" parent="1" source="5" target="6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;strokeColor=#33FFFF;" parent="1" source="5" target="7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;strokeColor=#33FFFF;" parent="1" source="6" target="8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;strokeColor=#33FFFF;" parent="1" source="7" target="8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
