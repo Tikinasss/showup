@@ -1,15 +1,20 @@
-'use client';
-
-import { Appointment } from '@/lib/types';
-import { generateICS } from '@/lib/utils';
+import { Appointment as TAppointment } from '@/lib/types';
+import { Appointment as UAppointment, generateICS } from '@/lib/utils';
 
 interface CalendarLinkProps {
-  appointment: Appointment;
+  appointment: TAppointment;
 }
 
 export default function CalendarLink({ appointment }: CalendarLinkProps) {
   const handleDownload = () => {
-    const icsContent = generateICS(appointment);
+    // transformer en type utils.Appointment
+    const appointmentForICS: UAppointment = {
+      ...appointment,
+      status: appointment.status, // si utils attend 'status'
+      lieu_lien: appointment.lieu_lien || '', // valeur par défaut si undefined
+    };
+
+    const icsContent = generateICS(appointmentForICS);
     const blob = new Blob([icsContent], { type: 'text/calendar' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');

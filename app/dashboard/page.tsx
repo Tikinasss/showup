@@ -76,7 +76,7 @@ export default function DashboardPage() {
     let filtered = [...appointments];
   
     if (filters.status) {
-      filtered = filtered.filter((a) => a.statut === filters.status);
+      filtered = filtered.filter((a) => a.status === filters.status);
     }
 
     if (filters.date) {

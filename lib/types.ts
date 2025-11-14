@@ -5,6 +5,7 @@ export enum AppointmentStatus {
   NO_SHOW = 'NO_SHOW',
   OPT_OUT = 'OPT_OUT',
 }
+
 export interface Appointment {
   id: string;
   prenom: string;
@@ -13,18 +14,14 @@ export interface Appointment {
   date: string;
   heure: string;
   lieu: string;
-
-  // 👉 AJOUTER ICI
-  lieu_lien?: string;
-
+  lieu_lien: string; // ✅ corriger ici
   conseiller: string;
   objet: string;
-  statut: AppointmentStatus;
+  status: AppointmentStatus;  // ✅ correct
   langue: string;
   created_at: string;
   updated_at: string;
 }
-
 
 export interface AppointmentStats {
   total: number;
