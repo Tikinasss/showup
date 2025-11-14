@@ -9,7 +9,7 @@ const convertToCSV = (appointments: Appointment[]) => {
   ];
   const rows = appointments.map(a => [
     a.prenom, a.phone, a.email, a.date, a.heure,
-    a.lieu, a.conseiller, a.objet, a.statut,
+    a.lieu, a.conseiller, a.objet, a.status,
     a.langue, a.created_at, a.updated_at
   ]);
   return [header, ...rows].map(r => r.join(';')).join('\n');
