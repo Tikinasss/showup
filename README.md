@@ -164,6 +164,14 @@ vercel
 - API
 - Système Agent
 
+## 🔧 Prespectives d'évolution
+
+- Gérer ses RDV en retour du SMS de rappel
+- Faire des messages vocaux personnalisables par l'utilisateur
+- Gamifier la ponctualité : points de récompenses sur les RDV honorés
+- Intégration du temps de trajet dans le rappel pour les RDV en physique
+
+
 ## 📝 License
 
 MIT
