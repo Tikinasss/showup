@@ -1,0 +1,623 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// current reference date (today = D0)\nconst now = new Date();\n\n// helper to format as YYYY-MM-DD\nconst formatDate = (d) => d.toISOString().split('T')[0];\n\n// compute relative future dates\nconst D0 = formatDate(now); // today\nconst D1 = formatDate(new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000)); // +1 day\nconst D3 = formatDate(new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)); // +3 days\n\n// expose variables\nreturn [\n  {\n    json: {\n      D0,\n      D1,\n      D3\n    }\n  }\n];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        -96
+      ],
+      "id": "49c0d913-3506-4756-b2a3-891c4ee5f3bd",
+      "name": "get_date_references"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "appointments",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "date",
+              "condition": "lte",
+              "keyValue": "={{$json[\"D3\"]}}"
+            },
+            {
+              "keyName": "statut",
+              "condition": "eq",
+              "keyValue": "SCHEDULED"
+            },
+            {
+              "keyName": "date",
+              "condition": "gte",
+              "keyValue": "={{$json[\"D0\"]}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -96
+      ],
+      "id": "b4e4c2d4-f03f-4757-9427-be7fba3a9042",
+      "name": "Get_appointment_between_D0_D3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3hY8hOt3nSSXtrE0",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node expects multiple items from DB\nreturn items.map(item => {\n  const row = item.json; // DB row\n  const appointmentDate = row.date;       // YYYY-MM-DD\n  const appointmentTime = row.heure;      // HH:MM:SS\n\n  const scheduled = new Date(`${appointmentDate}T${appointmentTime}`);\n\n  // Helper to set fixed hour and minute\n  const setFixedHour = (d, h, m) => {\n    const x = new Date(d);\n    x.setHours(h);\n    x.setMinutes(m);\n    x.setSeconds(0);\n    x.setMilliseconds(0);\n    return x;\n  };\n\n  const reminders = {\n    D3: setFixedHour(new Date(scheduled.getTime() - 3 * 24 * 3600 * 1000), 10, 0),\n    D1: setFixedHour(new Date(scheduled.getTime() - 1 * 24 * 3600 * 1000), 18, 0),\n    H3: new Date(scheduled.getTime() - 3 * 3600 * 1000),\n    H1: new Date(scheduled.getTime() - 1 * 3600 * 1000),\n    H0: new Date(scheduled.getTime()),\n    Hplus5: new Date(scheduled.getTime() + 5 * 60 * 1000)\n  };\n\n  return {\n    json: {\n      ...row,\n      scheduled,\n      reminders\n    }\n  };\n});\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -96
+      ],
+      "id": "92edf2fb-01c8-40ea-884d-fbc75f49af3d",
+      "name": "compute_reminder_time_for_each_rows"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---------------------------\n// n8n Function Node\n// ---------------------------\n\n// Current time in UTC\n// Current UTC time\nconst nowLocal = new Date();\nconst nowUTC = new Date(nowLocal.getTime() + 60 * 60 * 1000); // +1 hour\nconsole.log(\"UTC now      :\", nowLocal.toISOString());\nconsole.log(\"UTC+1 (FR)  :\", nowUTC.toISOString());\n\n\n\n// Print current times for debugging\nconsole.log(\"=== DEBUG CURRENT TIME ===\");\nconsole.log(\"Local now:\", nowLocal.toISOString());\nconsole.log(\"UTC now  :\", nowUTC.toISOString());\nconsole.log(\"==========================\");\n\n// Helper: difference in minutes using UTC timestamps\nconst diffInMinutes = (a, b) =>\n  Math.abs(a.getTime() - b.getTime()) / 1000 / 60;\n\n// Message templates\nconst templates = {\n  D3: (row) => `Bonjour ${row.prenom}, n'oubliez pas votre rendez-vous le ${row.date} à ${row.heure}. Confirmez ici: [lien]`,\n  D1: (row) => `Bonjour ${row.prenom}, rappel pour votre rendez-vous demain à ${row.heure}. Répondez ici ou laissez un message vocal.`,\n  H3: (row) => `Rendez-vous dans 3h à ${row.heure}. Plan / visio: [lien]. Bouton: \"Je serai en retard / Reprogrammer\"`,\n  H1: (row) => `Rendez-vous dans 1h. Résumé: ${row.objet}. Message vocal possible si SMS non ouvert.`,\n  H0: (row) => `Nous démarrons maintenant: [lien accès visio/lieu].`,\n  Hplus5: (row) => `Vous êtes absent ? On vous garde 10 min. Reprogrammez en 1 clic: [lien]`\n};\n\nlet output = [];\n\nitems.forEach(item => {\n  const row = item.json;\n  const reminders = row.reminders;\n\n  console.log(\"---- Checking appointment:\", row.id, row.prenom, \"----\");\n\n  // Iterate over each reminder type\n  for (const [type, reminderTime] of Object.entries(reminders)) {\n\n    const reminderDate = new Date(reminderTime);\n\n    const diff = diffInMinutes(reminderDate, nowUTC);\n\n    // Debug print\n    console.log(`Reminder: ${type}`);\n    console.log(\"  reminder UTC:\", reminderDate.toISOString());\n    console.log(\"  now UTC     :\", nowUTC.toISOString());\n    console.log(\"  diff minutes:\", diff);\n\n    if (diff <= 3) {\n      console.log(`🔥 MATCHED → Triggering reminder: ${type}`);\n\n      output.push({\n        json: {\n          ...row,\n          matchedReminder: type,\n          reminderTime: reminderDate.toISOString(),\n          message: templates[type](row)\n        }\n      });\n\n      break;\n    } else {\n      console.log(`⏭️ NOT matched → ${type} skipped`);\n    }\n  }\n});\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -96
+      ],
+      "id": "00cafe1d-2111-402b-aced-4f44ba6c66d2",
+      "name": "queue_reminders_&_attach_messages"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.topmessage.fr/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-TopMessage-Key",
+              "value": "4011132fa4d380239f5733f980ecc5e6"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": {\n    \"from\": \"Show up\",\n    \"to\": [\n      \"{{$json[\"phone\"]}}\"\n    ],\n    \"text\": \"{{ $json.output }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2800,
+        -272
+      ],
+      "id": "893dde61-4a2d-4847-be46-f0c6fb5116c7",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  let phone = item.json.phone;\n  \n  // Nettoyer (enlever espaces, tirets, points, parenthèses)\n  phone = String(phone).replace(/[\\s\\-\\.\\(\\)]/g, '');\n  \n  // Convertir au format international 33XXXXXXXXX\n  if (phone.startsWith('0')) {\n    phone = '33' + phone.substring(1);\n  } else if (phone.startsWith('+33')) {\n    phone = phone.substring(1);\n  } else if (phone.startsWith('+')) {\n    phone = phone.substring(1);\n  }\n  \n  return {\n    json: {\n      ...item.json,\n      phone: phone\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        -272
+      ],
+      "id": "6293be3f-92bb-4418-aaea-c98f45807dd0",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -768,
+        -96
+      ],
+      "id": "1be08194-6f49-48cc-9691-cf624e81118e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "path": "b52ada44-5eb2-446b-a28a-f1fc669a3230",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        144
+      ],
+      "id": "5828af22-5c08-4b07-898f-d8f8a5248edb",
+      "name": "Webhook",
+      "webhookId": "b52ada44-5eb2-446b-a28a-f1fc669a3230"
+    },
+    {
+      "parameters": {
+        "url": "https://geocoding-api.open-meteo.com/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.lieu }}"
+            },
+            {
+              "name": "count",
+              "value": "1"
+            },
+            {
+              "name": "language",
+              "value": "fr"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0cd4a47e-f6d2-4d93-bd9f-04c472b77235",
+      "name": "Géocodage Ville",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/meteofrance",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.results[0].latitude }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.results[0].longitude }}"
+            },
+            {
+              "name": "start_date",
+              "value": "={{ $json.formattedDate }}"
+            },
+            {
+              "name": "hourly",
+              "value": "temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m"
+            },
+            {
+              "name": "timezone",
+              "value": "Europe/Paris"
+            },
+            {
+              "name": "daily",
+              "value": "temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $json.formattedDate }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fa87b336-f5b8-4fad-ba6b-15a268d28c61",
+      "name": "Récupérer Météo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7817f267-a9c5-42be-a724-c6e1eaae40a5",
+              "name": "results[0].latitude",
+              "value": "={{ $json.results[0].latitude }}",
+              "type": "number"
+            },
+            {
+              "id": "c33216c9-2abc-4ef8-a7a0-78c0de6e87dd",
+              "name": "results[0].longitude",
+              "value": "={{ $json.results[0].longitude }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        400
+      ],
+      "id": "ee2a844e-b9d3-4e59-a1b9-f4f8a3bfeee9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.date }}",
+        "format": "yyyy-MM-dd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        464,
+        240
+      ],
+      "id": "41cae659-b0b9-48c5-b82c-f3a0663480cc",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        704,
+        336
+      ],
+      "id": "6820946d-26f6-439a-b1f2-6fc56314975f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "70714c5b-2e36-4c35-a8a6-75a543a53bee",
+              "name": "daily.temperature_2m_max[0]",
+              "value": "={{ $json.daily.temperature_2m_max[0] }}",
+              "type": "number"
+            },
+            {
+              "id": "c7878687-f17f-4535-9c91-e2b1c00d94a4",
+              "name": "daily.weather_code[0]",
+              "value": "={{ $json.daily.weather_code[0] }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        336
+      ],
+      "id": "6faa574f-e7dd-47a4-b9a6-88953e006d3a",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dictionnaire des codes météo (sans emoticons)\nconst weatherDescriptions = {\n  0: \"Ciel dégagé\",\n  1: \"Plutôt dégagé\",\n  2: \"Partiellement nuageux\",\n  3: \"Couvert\",\n  45: \"Brouillard\",\n  48: \"Brouillard givrant\",\n  51: \"Bruine légère\",\n  53: \"Bruine modérée\",\n  55: \"Bruine dense\",\n  61: \"Pluie légère\",\n  63: \"Pluie modérée\",\n  65: \"Pluie forte\",\n  71: \"Neige légère\",\n  73: \"Neige modérée\",\n  75: \"Neige forte\",\n  77: \"Grains de neige\",\n  80: \"Averses légères\",\n  81: \"Averses modérées\",\n  82: \"Averses violentes\",\n  85: \"Averses de neige légères\",\n  86: \"Averses de neige fortes\",\n  95: \"Orage\",\n  96: \"Orage avec grêle légère\",\n  99: \"Orage avec grêle forte\"\n};\n\n// On récupère l’item entrant\nconst item = items[0];\n\n// On extrait le code météo\nconst code = item.json.daily.weather_code[0];\n\n// On traduit\nconst description = weatherDescriptions[code] || \"Code météo inconnu\";\n\n// On renvoie la donnée enrichie\nreturn [\n  {\n    json: {\n      ...item.json,\n      weather_description: description\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        336
+      ],
+      "id": "9234fc01-42fc-48e4-9f4d-2e15e3a4207d",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tu es un assistant chargé de rédiger des SMS courts, engageants, chaleureux et personnalisés pour encourager une personne à venir à son rendez-vous.\nLe ton doit être : bienveillant, positif, motivant et humain, sans être trop formel.\n\nUtilise obligatoirement les informations suivantes pour personnaliser le message :\n\nPrénom : {{ $json.prenom }}\n\nDate & heure du rendez-vous : {{ $json.date }}\n\nPersonne à rencontrer : {{ $json.conseiller }}\n\nObjet du rendez-vous : {{ $json.objet }}\n\nLieu du rendez-vous : {{ $json.lieu }}\n\nMétéo du jour : code météo = {{ $json.daily.weather_code[0] }} / température max = {{ $json.daily.temperature_2m_max[0] }}°C\n\nContraintes du SMS :\n\nMaximum 1 à 2 phrases\n\nStyle simple, mobile-friendly, sans jargon\n\nIntégrer la météo de manière naturelle si elle est utile (ex : « il fera chaud », « temps ensoleillé », « un peu de pluie »…)\n\nEncourager la personne, rappeler brièvement l’importance ou l’utilité du rendez-vous\n\nToujours inclure une formule motivante ou rassurante\n\nObjectif : Donner envie à {{ $json.prenom }} de maintenir et honorer son rendez-vous.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1728,
+        336
+      ],
+      "id": "91ab89e5-209f-4e21-b71d-b045ba155e46",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        560
+      ],
+      "id": "4dd7c865-c1f2-4241-8aa0-3dea0c9f8ae1",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "CgwaipMMeu5hWp0j",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1520,
+        224
+      ],
+      "id": "57700312-21ca-40b0-b6b2-b6ed1de40f59",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2592,
+        -176
+      ],
+      "id": "8e40237f-86fa-42a2-91f2-6c258cdd253a",
+      "name": "Merge2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "get_date_references": {
+      "main": [
+        [
+          {
+            "node": "Get_appointment_between_D0_D3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_appointment_between_D0_D3": {
+      "main": [
+        [
+          {
+            "node": "compute_reminder_time_for_each_rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "compute_reminder_time_for_each_rows": {
+      "main": [
+        [
+          {
+            "node": "queue_reminders_&_attach_messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "queue_reminders_&_attach_messages": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Géocodage Ville",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "get_date_references",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Géocodage Ville": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Récupérer Météo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Récupérer Météo": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f738a4bc-2ced-4521-87d1-5cafb6c6e608",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30647cfa4c32473fcf6c1e9d1a047c37d20ccaab27c8c2f2b533764829738b7a"
+  },
+  "id": "axctawE6Fano1NqP",
+  "tags": []
+}
